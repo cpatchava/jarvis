@@ -4,10 +4,12 @@
 #include <stdio.h>
 
 #include <kernel/tty.h>
+#include <kernel/gdt.h>
 
 void kernel_early(void)
 {
 	terminal_initialize();
+	init_descriptor_tables();
 }
 
 void kernel_main(void)
