@@ -39,4 +39,5 @@ _start:
 .Lhang:
 	hlt
 	jmp .Lhang
+
 .size _start, . - _start
