@@ -8,8 +8,8 @@
 
 void kernel_early(void)
 {
-	terminal_initialize();
 	init_descriptor_tables();
+	terminal_initialize();
 }
 
 void kernel_main(void)
