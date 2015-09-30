@@ -3,6 +3,7 @@
 .set MEMINFO,  1<<1             # provide memory map
 .set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
 .set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
+.set OFFSET_GDT, 0x08
 .set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
 
 # Declare a header as in the Multiboot Standard.
@@ -33,6 +34,7 @@ _start:
 
 	# Transfer control to the main kernel.
 	call kernel_main
+	
 
 	# Hang if kernel_main unexpectedly returns.
 	cli
@@ -43,16 +45,17 @@ _start:
 .global gdt_flush    # Allows the C code to call gdt_flush().
 
 gdt_flush:
-   movl 0x4(%esp),%eax  # Get the pointer to the GDT, passed as a parameter.
-   lgdt (%eax)        # Load the new GDT pointer
-
-   mov 0x10,%ax       # 0x10 is the offset in the GDT to our data segment
-   mov %ax ,%ds        # Load all data segment selectors
-   mov %ax ,%es 
-   mov %ax ,%fs 
-   mov %ax ,%gs 
-   mov %ax ,%ss 
-   jmp	$0x08, $.flush   # 0x08 is the offset to our code segment: Far jump!
+	cli		
+	movl 0x4(%esp),%eax  # Get the pointer to the GDT, passed as a parameter.
+  lgdt (%eax)        # Load the new GDT pointer
+  
+	mov $0x10,%ax       # 0x10 is the offset in the GDT to our data segment
+  mov %ax ,%ss
+  mov %ax ,%ds        # Load all data segment selectors
+  mov %ax ,%es 
+  mov %ax ,%fs 
+  mov %ax ,%gs 
+  jmp $OFFSET_GDT,$.flush   # 0x08 is the offset to our code segment: Far jump!
 .flush:
    ret
 

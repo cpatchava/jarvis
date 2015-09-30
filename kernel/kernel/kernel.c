@@ -14,9 +14,11 @@ void kernel_early(void)
 
 void kernel_main(void)
 {
-	printf("Hello, kernel World!\n");
-	printf("Hello, kernel World!\n");
-	printf("Hello, kernel World!\n");
-	printf("Hello, kernel World!\n");
-	printf("Hello, kernel World!\n");
+	//terminal_initialize();
+//	init_descriptor_tables();
+	char a =0;
+	char b =0;
+	printf("Hello, kernel World! \n");
+	putchar(a);
+//	printf("Location of b: \n",b );
 }
