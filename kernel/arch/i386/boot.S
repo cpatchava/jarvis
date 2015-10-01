@@ -1,71 +1,61 @@
-# Declare constants used for creating a multiboot header.
-.set ALIGN,    1<<0             # align loaded modules on page boundaries
-.set MEMINFO,  1<<1             # provide memory map
-.set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
-.set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
-.set OFFSET_GDT, 0x08
-.set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
+.code32
+# boot.S - start point for the kernel after GRUB gives us control
+# vim:ts=4 noexpandtab
 
-# Declare a header as in the Multiboot Standard.
-.section .multiboot
+#define ASM     1
+
+#include "kernel/multiboot.h"
+#include "kernel/x86_desc.h"
+
+.text
+
+	# Multiboot header (required for GRUB to boot us)
+	.long MULTIBOOT_HEADER_MAGIC
+	.long MULTIBOOT_HEADER_FLAGS
+	.long -(MULTIBOOT_HEADER_MAGIC+MULTIBOOT_HEADER_FLAGS)
+
+# Entrypoint to the kernel
+.globl  start, _start
+
 .align 4
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
-
-# Reserve a stack for the initial thread.
-.section .bootstrap_stack, "aw", @nobits
-stack_bottom:
-.skip 16384 # 16 KiB
-stack_top:
-
-# The kernel entry point.
-.section .text
-.global _start
-.type _start, @function
+start:
 _start:
-	movl $stack_top, %esp
-
-	# Initialize the core kernel before running the global constructors.
-	call kernel_early
-
-	# Call the global constructors.
-	call _init
-
-	# Transfer control to the main kernel.
-	call kernel_main
-	
-
-	# Hang if kernel_main unexpectedly returns.
+	# Make sure interrupts are off
 	cli
-.Lhang:
+	jmp     continue
+
+continue:
+	# Load the GDT
+	lgdt	gdt_desc_ptr 
+
+	#lidt	
+	
+	# Load CS with the new descriptor value
+	ljmp    $KERNEL_CS, $keep_going
+
+keep_going:
+	# Set up ESP so we can have an initial stack
+	movl    $0x800000, %esp
+
+	# Set up the rest of the segment selector registers
+	movw    $KERNEL_DS, %cx
+	movw    %cx, %ss
+	movw    %cx, %ds
+	movw    %cx, %es
+	movw    %cx, %fs
+	movw    %cx, %gs
+
+	# Push the parameters that entry() expects (see kernel.c):
+	# eax = multiboot magic
+	# ebx = address of multiboot info struct
+	pushl   %ebx
+	pushl   %eax
+
+	# Jump to the C entrypoint to the kernel.
+	call    entry
+
+	# We'll never get back here, but we put in a hlt anyway.
+halt:
 	hlt
-	jmp .Lhang
+	jmp     halt
 
-.global gdt_flush    # Allows the C code to call gdt_flush().
-
-gdt_flush:
-	cli		
-	movl 0x4(%esp),%eax  # Get the pointer to the GDT, passed as a parameter.
-  lgdt (%eax)        # Load the new GDT pointer
-  
-	mov $0x10,%ax       # 0x10 is the offset in the GDT to our data segment
-  mov %ax ,%ss
-  mov %ax ,%ds        # Load all data segment selectors
-  mov %ax ,%es 
-  mov %ax ,%fs 
-  mov %ax ,%gs 
-  jmp $OFFSET_GDT,$.flush   # 0x08 is the offset to our code segment: Far jump!
-.flush:
-   ret
-
-.global idt_flush
-
-idt_flush:
-	mov %eax, 0x4(%esp)
-	lidt (%eax)
-	ret
-
-
-
-.size _start, . - _start

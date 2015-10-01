@@ -9,8 +9,8 @@
 #include <kernel/dt.h>
 
 // Lets us access our ASM functions from our C code.
-extern void gdt_flush(uint32_t);
-extern void idt_flush(uint32_t);
+//extern void gdt_flush(uint32_t);
+//extern void idt_flush(uint32_t);
 
 // Internal function prototypes.
 static void init_gdt();
@@ -44,7 +44,7 @@ static void init_gdt()
    gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
    gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
 
-   gdt_flush((uint32_t)&gdt_ptr);
+  // gdt_flush((uint32_t)&gdt_ptr);
 }
 
 
@@ -59,7 +59,7 @@ static void init_idt()
 //   idt_set_gate( 1, (uint32_t)isr1 , 0x08, 0x8E);
 //   idt_set_gate(31, (uint32_t)isr31, 0x08, 0x8E);
 
-   idt_flush((uint32_t)&idt_ptr);
+//   idt_flush((uint32_t)&idt_ptr);
 }
 
 
