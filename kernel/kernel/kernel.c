@@ -7,6 +7,7 @@
 #include "kernel/lib.h"
 #include "kernel/i8259.h"
 #include "kernel/debug.h"
+#include "kernel/interrupts.h"
 
 /* Macros. */
 /* Check if the bit BIT in FLAGS is set. */
@@ -144,10 +145,32 @@ entry (unsigned long magic, unsigned long addr)
 		ltr(KERNEL_TSS);
 	}
 
-	
+ /* Setup Trap Entries */                                                                       
+
+  idt_desc_t idt_entry;       // setup idt_entry                                                 
+  idt_entry.dpl       = 0;
+  idt_entry.present     = 1;
+  idt_entry.seg_selector    =KERNEL_CS;
+  idt_entry.reserved3     =1; //40    
+  idt_entry.reserved2     =1; //41   
+  idt_entry.reserved1     =1; //42  
+  idt_entry.size        =1; //43   
+  idt_entry.reserved0     =0; //44   
+	SET_IDT_ENTRY(idt_entry, divide_by_zero);
+	idt[0x00] = idt_entry;	
+
+	clear();
+	printf("Testing if its even coming here");
+
+/*	SET_IDT_ENTRY(idt_entry, &kb_wrapper);
+	idt[0x21] = idt_entry;	
+	clear();	*/
+
 	/* Init the PIC */
 	i8259_init();
 
+	int x = 0;
+	printf(x);
 	/* Initialize devices, memory, filesystem, enable device interrupts on the
 	 * PIC, any other initialization stuff... */
 

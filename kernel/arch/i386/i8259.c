@@ -24,8 +24,8 @@ i8259_init(void)
 
 	//0x21 is the I/O address of the master PIC
 	//0xA1 is the I/O address of the slave PIC
-	outb(0xFF, 0x21); //mask master interrupt
-	outb(0xFF, 0xA1);	//mask slave interrupt
+	outb(0xFF, 0x21); //0xFF -> P[0x21] mask master interrupt
+	outb(0xFF, 0xA1);	//0xFF -> P[0xA1] mask slave interrupt
 
 	outb(ICW1, MASTER_8259_PORT);
 	outb(ICW2_MASTER + 0, 0x21);
