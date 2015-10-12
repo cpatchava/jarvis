@@ -5,6 +5,7 @@
 #include "kernel/multiboot.h"
 #include "kernel/x86_desc.h"
 #include "kernel/lib.h"
+#include "kernel/wrapper.h"
 #include "kernel/i8259.h"
 #include "kernel/debug.h"
 #include "kernel/interrupts.h"
@@ -62,7 +63,7 @@ entry (unsigned long magic, unsigned long addr)
 			}
 			printf("\n");
 			mod_count++;
-			mod++;
+			//mod++;
 		}
 	}
 	/* Bits 4 and 5 are mutually exclusive! */
@@ -156,21 +157,112 @@ entry (unsigned long magic, unsigned long addr)
   idt_entry.reserved1     =1; //42  
   idt_entry.size        =1; //43   
   idt_entry.reserved0     =0; //44   
+
+
+  //0x00
+  SET_IDT_ENTRY(idt_entry, divide_by_zero);
+  idt[0x00] = idt_entry;
+  
+  /* Setup System Call Entry */
+/* 
+ idt_entry.dpl       = 3;
+  idt_entry.present     = 1;
+  idt_entry.seg_selector    =KERNEL_CS;
+  idt_entry.reserved3     =1; //40
+  idt_entry.reserved2     =1; //41
+  idt_entry.reserved1     =1; //42
+  idt_entry.size        =1; //43
+  idt_entry.reserved0     =0; //44
+  */
+    
+  /* Setup Interrupt Entries */
+  idt_entry.dpl       = 0;
+  idt_entry.present     = 1;
+  idt_entry.seg_selector    =KERNEL_CS;
+  idt_entry.reserved3     =0; //40
+  idt_entry.reserved2     =1; //41
+  idt_entry.reserved1     =1; //42
+  idt_entry.size        =1; //43
+  idt_entry.reserved0     =0; //44
+  
+
 	SET_IDT_ENTRY(idt_entry, divide_by_zero);
 	idt[0x00] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, debugger_interrupt);
+	idt[0x01] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, non_maskable_interrupt);
+	idt[0x02] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, breakpoint_interrupt);
+	idt[0x03] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, overflow_error);
+	idt[0x04] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, out_of_bounds_error);
+	idt[0x05] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, invalid_opcode_interrupt);
+	idt[0x06] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, coprocessor_not_avaliable);
+	idt[0x07] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, coprocessor_not_avaliable);
+	idt[0x08] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, coprocessor_segment_overrun);
+	idt[0x09] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, invalid_task_state_segment);
+	idt[0x0A] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, segment_not_present);
+	idt[0x0B] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, page_fault);
+	idt[0x0C] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, general_protection_fault);
+	idt[0x0D] = idt_entry;
+	SET_IDT_ENTRY(idt_entry, page_fault);
+	idt[0x0E] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, reserved_error);
+	idt[0x0F] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, reserved_error);
+	idt[0x10] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, reserved_error);
+	idt[0x11] = idt_entry;	
+	SET_IDT_ENTRY(idt_entry, reserved_error);
+	idt[0x12] = idt_entry;	
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x13] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x14] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x15] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x16] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x17] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x18] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x19] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x1A] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x1B] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x1C] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x1D] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x1E] = idt_entry;
+  SET_IDT_ENTRY(idt_entry, reserved_error);
+  idt[0x1F] = idt_entry;
+
+	/*Interrupt Entries setup*/
 
 	clear();
 	printf("Testing if its even coming here");
 
-/*	SET_IDT_ENTRY(idt_entry, &kb_wrapper);
+	SET_IDT_ENTRY(idt_entry, &_kb_wrapper);
 	idt[0x21] = idt_entry;	
-	clear();	*/
-
+	//clear();	
+	
 	/* Init the PIC */
+	cli();
 	i8259_init();
-
-	int x = 0;
-	printf(x);
 	/* Initialize devices, memory, filesystem, enable device interrupts on the
 	 * PIC, any other initialization stuff... */
 
@@ -178,11 +270,11 @@ entry (unsigned long magic, unsigned long addr)
 	/* Do not enable the following until after you have set up your
 	 * IDT correctly otherwise QEMU will triple fault and simple close
 	 * without showing you any output */
-	/*printf("Enabling Interrupts\n");
-	sti();*/
+	sti();
+	printf("Enabling Interrupts");
 
 	/* Execute the first program (`shell') ... */
-
+	while(1);
 	/* Spin (nicely, so we don't chew up cycles) */
 	asm volatile(".1: hlt; jmp .1;");
 }

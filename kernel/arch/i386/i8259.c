@@ -26,7 +26,7 @@ i8259_init(void)
 	//0xA1 is the I/O address of the slave PIC
 	outb(0xFF, 0x21); //0xFF -> P[0x21] mask master interrupt
 	outb(0xFF, 0xA1);	//0xFF -> P[0xA1] mask slave interrupt
-
+/*
 	outb(ICW1, MASTER_8259_PORT);
 	outb(ICW2_MASTER + 0, 0x21);
 	outb(ICW3_MASTER, 0x21);
@@ -38,6 +38,20 @@ i8259_init(void)
 
 	outb(master_mask, 0x21);
 	outb(slave_mask, 0xA1);
+*/
+
+	outb(0x11, 0x20);
+	outb(0x20 + 0, 0x21);
+	outb(0x04, 0x21);
+
+	outb(0x11, 0xA0);
+	outb(0x28, 0xA1);
+	outb(0x02, 0xA1);
+	outb(0x01, 0xA1);
+
+	outb(master_mask, 0x21); // unmask
+	outb(slave_mask, 0xA1);
+
 
 }
 

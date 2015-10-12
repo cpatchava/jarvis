@@ -1,7 +1,7 @@
 /**/
 
 #define ASM		1
-#include "x86_desc.h"
+#include "kernel/x86_desc.h"
 
 .text
 
